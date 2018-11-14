@@ -30,7 +30,7 @@ import Foundation
 ///                                          |  sendPendingLogs()+----> prepareLogsBatch()   |           |completeLog()             |updatePendingLogs()
 ///   logsReadWriteSerialQueue+--------------v-----------------------------------------------+-----------v--------------------------v------------------>
 ///
-class GraylogLogger {
+class Graylog {
     // MARK: - Statics
 
     /// Key in front of which we save logs in the User Defaults.
@@ -63,8 +63,8 @@ class GraylogLogger {
     /// Batch of logs that we will try to send each time the timer fires (`timeInterval`).
     var pendingLogsBatch: [LogElement] = []
 
-    /// Keychain instance used to save pending logs.
-    var keychain: UserDefaults {
+    /// User Defaults instance used to save pending logs.
+    var userDefaults: UserDefaults {
         return UserDefaults.standard
     }
 
@@ -74,10 +74,10 @@ class GraylogLogger {
     /// We synchronise each operations on the same serial queue to be sure we don't
     /// loose some logs by reading or writing concurrently the pending logs from different
     /// threads.
-    let logsReadWriteSerialQueue = DispatchQueue(label: "\(GraylogLogger.queuePrefix).logs.readwrite")
+    let logsReadWriteSerialQueue = DispatchQueue(label: "\(Graylog.queuePrefix).logs.readwrite")
 
     /// A serial queue into which the timer will live and fire.
-    let timerSerialQueue = DispatchQueue(label: "\(GraylogLogger.queuePrefix).timer")
+    let timerSerialQueue = DispatchQueue(label: "\(Graylog.queuePrefix).timer")
 
     // MARK: - init
 
@@ -88,7 +88,7 @@ class GraylogLogger {
 
         NotificationCenter.default.addObserver(self, selector: #selector(applicationWillResignActive), name: UIApplication.willResignActiveNotification, object: nil)
 
-        sendLogsTimer = BackgroundRepeatingTimer(timeInterval: GraylogLogger.timeInterval, queue: timerSerialQueue) { [weak self] in
+        sendLogsTimer = BackgroundRepeatingTimer(timeInterval: Graylog.timeInterval, queue: timerSerialQueue) { [weak self] in
             // Send pending logs synchronising logs
             // read/write operations.
             self?.logsReadWriteSerialQueue.sync {
@@ -127,7 +127,7 @@ class GraylogLogger {
         logsReadWriteSerialQueue.sync {
             var resultLogs = pendingLogs() ?? []
 
-            guard resultLogs.count + logs.count < GraylogLogger.maximumLogsCount else {
+            guard resultLogs.count + logs.count < Graylog.maximumLogsCount else {
                 return
             }
 
@@ -142,14 +142,19 @@ class GraylogLogger {
     /// - Parameters:
     ///   - logs: New logs list.
     func save(logs: [LogElement]) {
-        keychain.set(logs, forKey: GraylogLogger.userDefaultsKey)
+        let values = logs.map { return $0.values }
+        userDefaults.set(values, forKey: Graylog.userDefaultsKey)
     }
 
     /// Retrieve the actual list of the pending logs.
     ///
     /// - Returns: All pending logs list.
     func pendingLogs() -> [LogElement]? {
-        return keychain.array(forKey: GraylogLogger.userDefaultsKey) as? [LogElement]
+        guard let values = userDefaults.array(forKey: Graylog.userDefaultsKey) as? [LogValues] else {
+            return nil
+        }
+
+        return values.map(LogElement.init)
     }
 
     // MARK: - Logs sending
@@ -253,7 +258,7 @@ class GraylogLogger {
 
 // MARK: - Application state observers
 
-extension GraylogLogger {
+extension Graylog {
     @objc func applicationDidBecomeActive() {
         sendLogsTimer?.resume()
     }
