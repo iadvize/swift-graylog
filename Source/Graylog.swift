@@ -1,0 +1,264 @@
+//
+//  Graylog.swift
+//  SwiftGraylog
+//
+//  Created by Alexandre Karst on 14/11/2018.
+//  Copyright © 2018 iAdvize. All rights reserved.
+//
+
+import Foundation
+
+/// Logger in charge of sending logs to Graylog.
+/// If a log upload fails it will store pending logs locally (in the user defaults).
+/// Will retry X seconds to re-upload failed logs.
+///
+/// Threading schema of log upload retry:
+///
+///                                   TICK
+///                                     +
+///                                     |
+///                                     |                                                                      All logs uploaded
+///           TimerSerialQueue+---------v----+--------------------------------------------------------------------------^-----------+------------------>
+///                                          |                                                                          |           |
+///                                          |                                                                          |           |
+///                                          |                                                                          |           |
+///                                          |                                                sendLog()  (...)+-------> |           |
+/// URLSessionDataTaskQueueReq+--------------------------------------------------------------^-----------+--------------+------------------------------>
+///                                          |                                               |(X TIMES)  |                          |
+///                                          |                                               |           |                          |
+///                                          |                                               |           |                          |
+///                                          |  sendPendingLogs()+----> prepareLogsBatch()   |           |completeLog()             |updatePendingLogs()
+///   logsReadWriteSerialQueue+--------------v-----------------------------------------------+-----------v--------------------------v------------------>
+///
+class GraylogLogger {
+    // MARK: - Statics
+
+    /// Key in front of which we save logs in the User Defaults.
+    static let userDefaultsKey = "graylog.logs"
+
+    /// Number of logs we try to send at each timer tick.
+    static var batchCount = 10
+
+    /// Time (in seconds) within the `sendsLogTimer` will fire to try to upload pending logs.
+    static let timeInterval: TimeInterval = 60
+
+    /// Prefix of GCD queues labels.
+    static let queuePrefix = "graylog.queue"
+
+    /// Maximum number of logs we store in the User Defaults.
+    static let maximumLogsCount = 1000
+
+    // MARK: - Constants
+
+    let graylogURL: URL
+
+    // We truncate logs to 250 characters max (to avoid full html pages in case of server issues)
+    let logMessageMaxLength = 250
+
+    // MARK: - Vars
+
+    /// Timer which will fire after each `timeInterval` on a specific thread.
+    var sendLogsTimer: BackgroundRepeatingTimer?
+
+    /// Batch of logs that we will try to send each time the timer fires (`timeInterval`).
+    var pendingLogsBatch: [LogElement] = []
+
+    /// Keychain instance used to save pending logs.
+    var keychain: UserDefaults {
+        return UserDefaults.standard
+    }
+
+    // MARK: - Queues
+
+    /// A serial queue used to synchronise all read/write operations on pending logs.
+    /// We synchronise each operations on the same serial queue to be sure we don't
+    /// loose some logs by reading or writing concurrently the pending logs from different
+    /// threads.
+    let logsReadWriteSerialQueue = DispatchQueue(label: "\(GraylogLogger.queuePrefix).logs.readwrite")
+
+    /// A serial queue into which the timer will live and fire.
+    let timerSerialQueue = DispatchQueue(label: "\(GraylogLogger.queuePrefix).timer")
+
+    // MARK: - init
+
+    init(graylogURL: URL) {
+        self.graylogURL = graylogURL
+
+        NotificationCenter.default.addObserver(self, selector: #selector(applicationDidBecomeActive), name: UIApplication.didBecomeActiveNotification, object: nil)
+
+        NotificationCenter.default.addObserver(self, selector: #selector(applicationWillResignActive), name: UIApplication.willResignActiveNotification, object: nil)
+
+        sendLogsTimer = BackgroundRepeatingTimer(timeInterval: GraylogLogger.timeInterval, queue: timerSerialQueue) { [weak self] in
+            // Send pending logs synchronising logs
+            // read/write operations.
+            self?.logsReadWriteSerialQueue.sync {
+                self?.sendPendingLogs()
+            }
+        }
+
+        sendLogsTimer?.resume()
+    }
+
+    deinit {
+        NotificationCenter.default.removeObserver(self)
+    }
+
+    // MARK: - LoggerSource overrided methods
+
+    func log(_ log: LogElement){
+        send(log: log)
+    }
+
+    // MARK: - Logs operations
+
+    /// Append and save a Log into the pending logs list.
+    ///
+    /// - Parameter log: Log information wrapped in a LogElement.
+    func save(log: LogElement) {
+        insert(logs: [log], at: .end)
+    }
+
+    /// Append and save a new list of logs at the desired position into the pending logs list.
+    ///
+    /// - Parameters:
+    ///   - logs: Logs to save.
+    ///   - position: Desired position in the pending logs list.
+    func insert(logs: [LogElement], at position: ArrayPosition) {
+        logsReadWriteSerialQueue.sync {
+            var resultLogs = pendingLogs() ?? []
+
+            guard resultLogs.count + logs.count < GraylogLogger.maximumLogsCount else {
+                return
+            }
+
+            resultLogs.queue(logs, at: position)
+
+            save(logs: resultLogs)
+        }
+    }
+
+    /// Replace the saved pending logs list by the list in parameter.
+    ///
+    /// - Parameters:
+    ///   - logs: New logs list.
+    func save(logs: [LogElement]) {
+        keychain.set(logs, forKey: GraylogLogger.userDefaultsKey)
+    }
+
+    /// Retrieve the actual list of the pending logs.
+    ///
+    /// - Returns: All pending logs list.
+    func pendingLogs() -> [LogElement]? {
+        return keychain.array(forKey: GraylogLogger.userDefaultsKey) as? [LogElement]
+    }
+
+    // MARK: - Logs sending
+
+    /// Each log which came through the logger should be sent to the Graylog server.
+    ///
+    /// - Parameter log: Log information to send to the server.
+    func send(log: LogElement) {
+        postLogRequest(log: log) { success in
+            guard success else {
+                self.save(log: log)
+                return
+            }
+        }
+    }
+
+    /// As Graylog API doesn't support batch mode for logs sending, we will prepare batches
+    /// of X pending logs (logs which we failed to send) and send them one by one to Graylog.
+    func prepareLogsBatch() {
+        guard var logs = pendingLogs(),
+            logs.count > 0 else {
+                return
+        }
+
+        pendingLogsBatch = logs.dequeueFirst(10)
+
+        save(logs: logs)
+    }
+
+    /// Called this method when a pending log was successfully sent to the server.
+    ///
+    /// - Parameter log: Log successfully sent.
+    func completeLog(log: LogElement) {
+        self.logsReadWriteSerialQueue.sync {
+            if let index = self.pendingLogsBatch.index(of: log) {
+                self.pendingLogsBatch.remove(at: index)
+            }
+        }
+    }
+
+    /// Send the pending logs (logs which we fail to send).
+    @objc func sendPendingLogs() {
+        prepareLogsBatch()
+
+        guard pendingLogsBatch.count > 0 else {
+            return
+        }
+
+        let group = DispatchGroup()
+
+        pendingLogsBatch.forEach { log in
+            group.enter()
+            postLogRequest(log: log) { success in
+                if success {
+                    // In case of success, we can remove the log from pendingLogsBatch.
+                    // Otherwise we let it in the pending logs list.
+                    self.completeLog(log: log)
+                }
+
+                group.leave()
+            }
+        }
+
+        group.notify(queue: timerSerialQueue) {
+            // If some logs failed, we requeue them.
+            if self.pendingLogsBatch.count > 0 {
+                self.insert(logs: self.pendingLogsBatch, at: .begin)
+                self.pendingLogsBatch = []
+            }
+        }
+    }
+
+    /// Http request to send the log on the Graylog server.
+    ///
+    /// - Parameters:
+    ///   - log: Log information to send to the server.
+    ///   - completion: Called when the HTTP request is done or if it fails.
+    func postLogRequest(log: LogElement, completion: @escaping (_ success: Bool) -> Void) {
+        do {
+            let method: HTTPMethod = .post
+
+            var urlRequest = try URLRequest(url: graylogURL, method: method)
+
+            let body = try JSONSerialization.data(withJSONObject: log.values, options: .prettyPrinted)
+
+            urlRequest.httpBody = body
+
+            URLSession.shared.dataTask(with: urlRequest) {data, response, error in
+                do {
+                    try Networking.validate(data, response, error)
+                    completion(true)
+                } catch {
+                    completion(false)
+                }
+                }.resume()
+        } catch {
+            completion(false)
+        }
+    }
+}
+
+// MARK: - Application state observers
+
+extension GraylogLogger {
+    @objc func applicationDidBecomeActive() {
+        sendLogsTimer?.resume()
+    }
+
+    @objc func applicationWillResignActive() {
+        sendLogsTimer?.suspend()
+    }
+}
