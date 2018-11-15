@@ -9,6 +9,16 @@ jobs:
     steps:
       - checkout
       - run:
+          name: Set Ruby Version
+          command:  echo "ruby-2.3" > ~/.ruby-version
+      - restore_cache:
+          key: 1-gems-{{ checksum "Gemfile.lock" }}
+      - run: bundle check || bundle install --path vendor/bundle
+      - save_cache:
+          key: 1-gems-{{ checksum "Gemfile.lock" }}
+          paths:
+            - vendor/bundle
+      - run:
           name: Fetch CocoaPods Specs
           command: |
             curl https://cocoapods-specs.circleci.com/fetch-cocoapods-repo-from-s3.sh | bash -s cf
@@ -17,19 +27,10 @@ jobs:
           command: pod install --verbose
       - run:
           name: Build and run tests
-          command: bundle exec fastlane scan --formatter xcpretty-json-formatter
+          command: bundle exec fastlane scan
           environment:
             SCAN_DEVICE: iPhone X
             SCAN_SCHEME: SwiftGraylog
-            XCPRETTY_JSON_FILE_OUTPUT: xcodebuild.json
-      - store_test_results:
-          path: test_output/report.xml
-      - store_artifacts:
-          path: /tmp/test-results
-          destination: scan-test-results
-      - store_artifacts:
-          path: ~/Library/Logs/scan
-          destination: scan-logs
 workflows:
   version: 2
   build-and-test:
