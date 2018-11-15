@@ -8,7 +8,7 @@
 
 import Foundation
 
-typealias LogValues = [AnyHashable: Any]
+public typealias LogValues = [AnyHashable: Any]
 
 class LogElement: Equatable {
     let values: LogValues

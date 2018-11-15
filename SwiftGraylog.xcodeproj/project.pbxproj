@@ -24,6 +24,7 @@
 		2D119C8B219C17A5008699E4 /* Networking.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2D119C8A219C17A5008699E4 /* Networking.swift */; };
 		2D119C8D219C17FF008699E4 /* APIError.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2D119C8C219C17FF008699E4 /* APIError.swift */; };
 		2D119C8F219C26AA008699E4 /* GraylogSpec.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2D119C8E219C26A9008699E4 /* GraylogSpec.swift */; };
+		6A597F79FBD19452009FDB08 /* Pods_SwiftGraylog.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = A5616E3E606446386B5CE20E /* Pods_SwiftGraylog.framework */; };
 		BDBBBC0ACC3E388C475E9FB6 /* Pods_Tests.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 5897DDAFDDB24F4CDB6B1252 /* Pods_Tests.framework */; };
 /* End PBXBuildFile section */
 
@@ -59,7 +60,10 @@
 		2D119C8A219C17A5008699E4 /* Networking.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Networking.swift; sourceTree = "<group>"; };
 		2D119C8C219C17FF008699E4 /* APIError.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = APIError.swift; sourceTree = "<group>"; };
 		2D119C8E219C26A9008699E4 /* GraylogSpec.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GraylogSpec.swift; sourceTree = "<group>"; };
+		39010B171931059DA0391C5C /* Pods-SwiftGraylog.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-SwiftGraylog.debug.xcconfig"; path = "Pods/Target Support Files/Pods-SwiftGraylog/Pods-SwiftGraylog.debug.xcconfig"; sourceTree = "<group>"; };
 		5897DDAFDDB24F4CDB6B1252 /* Pods_Tests.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_Tests.framework; sourceTree = BUILT_PRODUCTS_DIR; };
+		7A0B8C607E3F594AA3EB675B /* Pods-SwiftGraylog.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-SwiftGraylog.release.xcconfig"; path = "Pods/Target Support Files/Pods-SwiftGraylog/Pods-SwiftGraylog.release.xcconfig"; sourceTree = "<group>"; };
+		A5616E3E606446386B5CE20E /* Pods_SwiftGraylog.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_SwiftGraylog.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		D5AFF878033E2B342D155ED4 /* Pods-Tests.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-Tests.debug.xcconfig"; path = "Pods/Target Support Files/Pods-Tests/Pods-Tests.debug.xcconfig"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
@@ -68,6 +72,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				6A597F79FBD19452009FDB08 /* Pods_SwiftGraylog.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -171,6 +176,7 @@
 			isa = PBXGroup;
 			children = (
 				5897DDAFDDB24F4CDB6B1252 /* Pods_Tests.framework */,
+				A5616E3E606446386B5CE20E /* Pods_SwiftGraylog.framework */,
 			);
 			name = Frameworks;
 			sourceTree = "<group>";
@@ -180,6 +186,8 @@
 			children = (
 				D5AFF878033E2B342D155ED4 /* Pods-Tests.debug.xcconfig */,
 				2916BB0B562AB848287A6332 /* Pods-Tests.release.xcconfig */,
+				39010B171931059DA0391C5C /* Pods-SwiftGraylog.debug.xcconfig */,
+				7A0B8C607E3F594AA3EB675B /* Pods-SwiftGraylog.release.xcconfig */,
 			);
 			name = Pods;
 			sourceTree = "<group>";
@@ -202,10 +210,12 @@
 			isa = PBXNativeTarget;
 			buildConfigurationList = 2D119C43219C07A2008699E4 /* Build configuration list for PBXNativeTarget "SwiftGraylog" */;
 			buildPhases = (
+				1A338ED486CE4B2E5DDBD222 /* [CP] Check Pods Manifest.lock */,
 				2D119C36219C07A2008699E4 /* Headers */,
 				2D119C37219C07A2008699E4 /* Sources */,
 				2D119C38219C07A2008699E4 /* Frameworks */,
 				2D119C39219C07A2008699E4 /* Resources */,
+				2D119CB1219D619F008699E4 /* SwiftLint */,
 			);
 			buildRules = (
 			);
@@ -298,6 +308,46 @@
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXShellScriptBuildPhase section */
+		1A338ED486CE4B2E5DDBD222 /* [CP] Check Pods Manifest.lock */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+			);
+			inputPaths = (
+				"${PODS_PODFILE_DIR_PATH}/Podfile.lock",
+				"${PODS_ROOT}/Manifest.lock",
+			);
+			name = "[CP] Check Pods Manifest.lock";
+			outputFileListPaths = (
+			);
+			outputPaths = (
+				"$(DERIVED_FILE_DIR)/Pods-SwiftGraylog-checkManifestLockResult.txt",
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "diff \"${PODS_PODFILE_DIR_PATH}/Podfile.lock\" \"${PODS_ROOT}/Manifest.lock\" > /dev/null\nif [ $? != 0 ] ; then\n    # print error to STDERR\n    echo \"error: The sandbox is not in sync with the Podfile.lock. Run 'pod install' or update your CocoaPods installation.\" >&2\n    exit 1\nfi\n# This output is used by Xcode 'outputs' to avoid re-running this script phase.\necho \"SUCCESS\" > \"${SCRIPT_OUTPUT_FILE_0}\"\n";
+			showEnvVarsInLog = 0;
+		};
+		2D119CB1219D619F008699E4 /* SwiftLint */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+			);
+			inputPaths = (
+			);
+			name = SwiftLint;
+			outputFileListPaths = (
+			);
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "\"${PODS_ROOT}/SwiftLint/swiftlint\"\n";
+		};
 		A29B16C46DFA05B43B973734 /* [CP] Embed Pods Frameworks */ = {
 			isa = PBXShellScriptBuildPhase;
 			buildActionMask = 2147483647;
@@ -508,6 +558,7 @@
 		};
 		2D119C44219C07A2008699E4 /* Debug */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = 39010B171931059DA0391C5C /* Pods-SwiftGraylog.debug.xcconfig */;
 			buildSettings = {
 				CLANG_ENABLE_MODULES = YES;
 				CODE_SIGN_IDENTITY = "";
@@ -519,6 +570,7 @@
 				DYLIB_INSTALL_NAME_BASE = "@rpath";
 				INFOPLIST_FILE = Source/Info.plist;
 				INSTALL_PATH = "$(LOCAL_LIBRARY_DIR)/Frameworks";
+				IPHONEOS_DEPLOYMENT_TARGET = 8.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
@@ -535,6 +587,7 @@
 		};
 		2D119C45219C07A2008699E4 /* Release */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = 7A0B8C607E3F594AA3EB675B /* Pods-SwiftGraylog.release.xcconfig */;
 			buildSettings = {
 				CLANG_ENABLE_MODULES = YES;
 				CODE_SIGN_IDENTITY = "";
@@ -546,6 +599,7 @@
 				DYLIB_INSTALL_NAME_BASE = "@rpath";
 				INFOPLIST_FILE = Source/Info.plist;
 				INSTALL_PATH = "$(LOCAL_LIBRARY_DIR)/Frameworks";
+				IPHONEOS_DEPLOYMENT_TARGET = 8.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
@@ -563,7 +617,7 @@
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = D5AFF878033E2B342D155ED4 /* Pods-Tests.debug.xcconfig */;
 			buildSettings = {
-				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = YES;
+				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = "$(inherited)";
 				CODE_SIGN_STYLE = Automatic;
 				DEVELOPMENT_TEAM = 5PPY38J7P4;
 				INFOPLIST_FILE = Tests/Info.plist;
@@ -583,7 +637,7 @@
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = 2916BB0B562AB848287A6332 /* Pods-Tests.release.xcconfig */;
 			buildSettings = {
-				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = YES;
+				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = "$(inherited)";
 				CODE_SIGN_STYLE = Automatic;
 				DEVELOPMENT_TEAM = 5PPY38J7P4;
 				INFOPLIST_FILE = Tests/Info.plist;

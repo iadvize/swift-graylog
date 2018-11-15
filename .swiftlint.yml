@@ -1,0 +1,21 @@
+disabled_rules:
+  - force_cast
+  - line_length
+  - nesting
+type_name:
+  max_length: 100
+file_length: 600
+# With Codable we automatically matches `id` from the API response.
+variable_name:
+  min_length: 2
+excluded:
+  - Pods
+  - Ibbu/Sources/Customization/AppAsset.swift
+  - IbbuUITests/SnapshotHelper.swift
+  - IAdvizeConversationSDK/Resources/GraphQL/API.swift
+  - IAdvizeConversationSDK/Sources/Keychain/KeychainSwift/KeychainSwift.swift
+  - IAdvizeConversationSDK/Sources/RFISO8601
+  - IAdvizeConversationSDKTests/Specs/RFISO8601/RFISO8601DateTimeTests.swift
+  - IAdvizeConversationSDK/Sources/Reachability/Reachability.swift
+  - IAdvizeConversationSDK/Sources/Extensions/UIDevice/UIDevice+ModelName.swift
+  - vendor

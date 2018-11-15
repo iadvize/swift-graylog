@@ -30,8 +30,10 @@ import Foundation
 ///                                          |  sendPendingLogs()+----> prepareLogsBatch()   |           |completeLog()             |updatePendingLogs()
 ///   logsReadWriteSerialQueue+--------------v-----------------------------------------------+-----------v--------------------------v------------------>
 ///
-class Graylog {
+public class Graylog {
     // MARK: - Statics
+
+    static let shared = Graylog()
 
     /// Key in front of which we save logs in the User Defaults.
     static let userDefaultsKey = "graylog.logs"
@@ -48,14 +50,12 @@ class Graylog {
     /// Maximum number of logs we store in the User Defaults.
     static let maximumLogsCount = 1000
 
-    // MARK: - Constants
-
-    let graylogURL: URL
-
     // We truncate logs to 250 characters max (to avoid full html pages in case of server issues)
     let logMessageMaxLength = 250
 
     // MARK: - Vars
+
+    var graylogURL: URL?
 
     /// Timer which will fire after each `timeInterval` on a specific thread.
     var sendLogsTimer: BackgroundRepeatingTimer?
@@ -81,9 +81,7 @@ class Graylog {
 
     // MARK: - init
 
-    init(graylogURL: URL) {
-        self.graylogURL = graylogURL
-
+    init() {
         NotificationCenter.default.addObserver(self, selector: #selector(applicationDidBecomeActive), name: UIApplication.didBecomeActiveNotification, object: nil)
 
         NotificationCenter.default.addObserver(self, selector: #selector(applicationWillResignActive), name: UIApplication.willResignActiveNotification, object: nil)
@@ -103,13 +101,11 @@ class Graylog {
         NotificationCenter.default.removeObserver(self)
     }
 
-    // MARK: - LoggerSource overrided methods
+    // MARK: - Logs operations
 
-    func log(_ log: LogElement){
+    func log(_ log: LogElement) {
         send(log: log)
     }
-
-    // MARK: - Logs operations
 
     /// Append and save a Log into the pending logs list.
     ///
@@ -162,7 +158,7 @@ class Graylog {
     /// Each log which came through the logger should be sent to the Graylog server.
     ///
     /// - Parameter log: Log information to send to the server.
-    func send(log: LogElement) {
+    private func send(log: LogElement) {
         postLogRequest(log: log) { success in
             guard success else {
                 self.save(log: log)
@@ -179,7 +175,7 @@ class Graylog {
                 return
         }
 
-        pendingLogsBatch = logs.dequeueFirst(10)
+        pendingLogsBatch = logs.dequeueFirst(Graylog.batchCount)
 
         save(logs: logs)
     }
@@ -232,8 +228,14 @@ class Graylog {
     /// - Parameters:
     ///   - log: Log information to send to the server.
     ///   - completion: Called when the HTTP request is done or if it fails.
-    func postLogRequest(log: LogElement, completion: @escaping (_ success: Bool) -> Void) {
+    private func postLogRequest(log: LogElement, completion: @escaping (_ success: Bool) -> Void) {
         do {
+            guard let graylogURL = graylogURL else {
+                print("Error! We are unable to send log to Graylog. No graylogURL set.")
+                completion(false)
+                return
+            }
+
             let method: HTTPMethod = .post
 
             var urlRequest = try URLRequest(url: graylogURL, method: method)
@@ -247,6 +249,7 @@ class Graylog {
                     try Networking.validate(data, response, error)
                     completion(true)
                 } catch {
+                    print("Error! We are unable to send log to Graylog: \(error.localizedDescription)")
                     completion(false)
                 }
                 }.resume()
@@ -265,5 +268,23 @@ extension Graylog {
 
     @objc func applicationWillResignActive() {
         sendLogsTimer?.suspend()
+    }
+}
+
+extension Graylog {
+    /// Set Graylog server API (`gelf`) URL.
+    ///
+    /// - Parameter url: Graylog server `gelf` URL.
+    public static func setURL(_ url: URL) {
+        Graylog.shared.graylogURL = url
+    }
+
+    /// Sends a log to Graylog. If it fails, we queue it and we retry the queued logs each minute.
+    ///
+    /// - Parameter values: JSON dictionary to be sent to Graylog. See http://docs.graylog.org/en/2.4/pages/gelf.html for available fields.
+    public static func log(_ values: LogValues) {
+        assert(Graylog.shared.graylogURL != nil)
+
+        Graylog.shared.log(LogElement(values: values))
     }
 }

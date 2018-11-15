@@ -14,7 +14,12 @@ import Mockingjay
 @testable import SwiftGraylog
 
 class GraylogSpec: QuickSpec {
-    let logger = Graylog(graylogURL: URL(string: "https://yourgraylog.com/gelf")!)
+    lazy var logger: Graylog = {
+        let graylog = Graylog()
+        graylog.graylogURL = URL(string: "https://yourgraylog.com/gelf")!
+
+        return graylog
+    }()
 
     func buildLog(message: String) -> LogElement {
         return LogElement(values: ["message": message])
@@ -25,9 +30,6 @@ class GraylogSpec: QuickSpec {
         beforeEach {
             // By default we stub the Graylog call to a successfull one.
             self.stub(uri("/gelf"), http(202))
-        }
-
-        afterEach {
             self.logger.pendingLogsBatch = []
             self.logger.userDefaults.set([], forKey: Graylog.userDefaultsKey)
         }
@@ -228,24 +230,6 @@ class GraylogSpec: QuickSpec {
             }
         }
 
-        // MARK: - log()
-        describe("log(): log an element and send it to the Graylog server (stubbed here)") {
-            // MARK: - when we log one element
-            context("when we log one element") {
-                it("should add it to the pending logs queue") {
-                    // We stub an issue in the HTTP call to force saving the log..
-                    self.stub(uri("/gelf"), http(404))
-
-                    let log = self.buildLog(message: "Log verbose")
-
-                    self.logger.log(log)
-
-                    // We wait to let the stubbed request properly finish.
-                    expect(self.logger.pendingLogs()?.count).toEventually(equal(1), timeout: 1, pollInterval: 1)
-                }
-            }
-        }
-
         // MARK: - send(log)
         describe("send(log): send a log to the Graylog server (stubbed here)") {
             // MARK: - when we fail to send the log
@@ -271,14 +255,13 @@ class GraylogSpec: QuickSpec {
 
                     self.logger.log(errorLog)
 
-                    expect(self.logger.pendingLogs()).toEventually(beEmpty(), timeout: 1, pollInterval: 1)
+                    expect(self.logger.pendingLogs()).toEventually(beEmpty(), timeout: 5, pollInterval: 1)
                 }
             }
         }
 
         // MARK: - sendPendingLogs()
         describe("sendPendingLogs(): send pending logs to the Graylog server (stubbed here)") {
-
             // MARK: - when we don't have any pending logs
             context("when we don't have any pending logs") {
                 it("should not do anything") {
