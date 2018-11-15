@@ -8,7 +8,7 @@ Pod::Spec.new do |spec|
     spec.source                     = { :git => 'https://github.com/iadvize/swift-graylog.git', :branch => 'master' }
     spec.platform                   = :ios, '9.3'
 
-    spec.ios.deployment_target         = '8.0'
+    spec.ios.deployment_target      = '8.0'
 
-    spec.source_files                  = 'Source/*.swift'
+    spec.source_files               = 'Source/*.swift'
   end
