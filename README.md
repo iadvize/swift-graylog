@@ -10,7 +10,7 @@ First you have to define your Graylog server URL:
 
 ```swift
 if let url = URL(string: "https://yourgraylog.com/gelf") {
-Graylog.setURL(url)
+    Graylog.setURL(url)
 }
 ```
 
