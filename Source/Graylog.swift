@@ -185,7 +185,7 @@ public class Graylog {
     /// - Parameter log: Log successfully sent.
     func completeLog(log: LogElement) {
         self.logsReadWriteSerialQueue.sync {
-            if let index = self.pendingLogsBatch.index(of: log) {
+            if let index = self.pendingLogsBatch.firstIndex(of: log) {
                 self.pendingLogsBatch.remove(at: index)
             }
         }

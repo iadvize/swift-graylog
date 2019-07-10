@@ -3,14 +3,11 @@ version: 2
 jobs:
   build-and-test:
     macos:
-      xcode: "10.0.0"
+      xcode: "10.2.0"
     shell: /bin/bash --login -eo pipefail
 
     steps:
       - checkout
-      - run:
-          name: Set Ruby Version
-          command:  echo "ruby-2.3" > ~/.ruby-version
       - restore_cache:
           key: 1-gems-{{ checksum "Gemfile.lock" }}
       - run: bundle check || bundle install --path vendor/bundle

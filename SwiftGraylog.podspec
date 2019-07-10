@@ -1,15 +1,15 @@
 Pod::Spec.new do |spec|
     spec.name                       = 'SwiftGraylog'
-    spec.version                    = '1.0.0'
+    spec.version                    = '1.1.0'
     spec.license                    = 'MIT'
     spec.homepage                   = 'https://github.com/iadvize/swift-graylog'
     spec.authors                    = { 'Name' => 'mobile@iadvize.com' }
     spec.summary                    = 'Graylog library written in Swift.'
-    spec.source                     = { :git => 'https://github.com/iadvize/swift-graylog.git', :branch => 'master' }
+    spec.source                     = { :git => 'https://github.com/iadvize/swift-graylog.git', :tag => '1.1.0' }
     spec.platform                   = :ios, '9.3'
 
     spec.ios.deployment_target      = '8.0'
-    spec.swift_version              = '4.2'
+    spec.swift_version              = '5'
 
     spec.source_files               = 'Source/*.swift'
   end

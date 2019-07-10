@@ -11,6 +11,6 @@ target 'Tests' do
 
     pod 'Quick'
     pod 'Nimble'
-    pod 'Mockingjay'
+    pod 'Mockingjay', '~> 3.0.0-alpha.1'
 end
 
