@@ -18,7 +18,7 @@ DEPENDENCIES:
   - SwiftLint
 
 SPEC REPOS:
-  https://github.com/cocoapods/specs.git:
+  https://github.com/CocoaPods/Specs.git:
     - Mockingjay
     - Nimble
     - Quick
@@ -34,4 +34,4 @@ SPEC CHECKSUMS:
 
 PODFILE CHECKSUM: fa945c67bd70527513c90bd2855019fcfac6198c
 
-COCOAPODS: 1.6.2
+COCOAPODS: 1.8.4
