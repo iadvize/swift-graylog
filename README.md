@@ -6,10 +6,10 @@ Graylog library written in Swift.
 
 ## Compatibility
 
-| Version | Minimum iOS Version | Swift Version |
-| :-----: | :-----------------: | :-----------: |
-|  1.1.0  |       iOS 8.0       |    Swift 5    |
-|  1.0.0  |       iOS 8.0       |    Swift 4    |
+|   Version    | Minimum iOS Version | Swift Version |
+| :----------: | :-----------------: | :-----------: |
+| 1.1.0, 1.1.1 |       iOS 8.0       |    Swift 5    |
+|    1.0.0     |       iOS 8.0       |    Swift 4    |
 
 ## Documentation
 
