@@ -265,6 +265,7 @@ class GraylogSpec: QuickSpec {
             // MARK: - when we don't have any pending logs
             context("when we don't have any pending logs") {
                 it("should not do anything") {
+                    self.logger.userDefaults.set([], forKey: Graylog.userDefaultsKey)
                     expect(self.logger.pendingLogs()?.count).to(equal(0))
 
                     self.logger.sendPendingLogs()

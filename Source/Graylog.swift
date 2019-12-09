@@ -111,7 +111,9 @@ public class Graylog {
     ///
     /// - Parameter log: Log information wrapped in a LogElement.
     func save(log: LogElement) {
-        insert(logs: [log], at: .end)
+        self.logsReadWriteSerialQueue.sync {
+            insert(logs: [log], at: .end)
+        }
     }
 
     /// Append and save a new list of logs at the desired position into the pending logs list.
@@ -120,17 +122,15 @@ public class Graylog {
     ///   - logs: Logs to save.
     ///   - position: Desired position in the pending logs list.
     func insert(logs: [LogElement], at position: ArrayPosition) {
-        logsReadWriteSerialQueue.sync {
-            var resultLogs = pendingLogs() ?? []
+        var resultLogs = pendingLogs() ?? []
 
-            guard resultLogs.count + logs.count < Graylog.maximumLogsCount else {
-                return
-            }
-
-            resultLogs.queue(logs, at: position)
-
-            save(logs: resultLogs)
+        guard resultLogs.count + logs.count < Graylog.maximumLogsCount else {
+            return
         }
+
+        resultLogs.queue(logs, at: position)
+
+        save(logs: resultLogs)
     }
 
     /// Replace the saved pending logs list by the list in parameter.
@@ -216,9 +216,11 @@ public class Graylog {
 
         group.notify(queue: timerSerialQueue) {
             // If some logs failed, we requeue them.
-            if self.pendingLogsBatch.count > 0 {
-                self.insert(logs: self.pendingLogsBatch, at: .begin)
-                self.pendingLogsBatch = []
+            self.logsReadWriteSerialQueue.sync {
+                if self.pendingLogsBatch.count > 0 {
+                    self.insert(logs: self.pendingLogsBatch, at: .begin)
+                    self.pendingLogsBatch = []
+                }
             }
         }
     }
